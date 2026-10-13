@@ -1,0 +1,19 @@
+{
+  "name": "vid-tube",
+  "version": "1.0.0",
+  "description": "yt based clone to learn backend and LLD + Sys Design",
+  "keywords": [
+    "javascript",
+    "db",
+    "backend",
+    "system",
+    "design",
+    "LLD"
+  ],
+  "author": "Ch-Kumar-Kartik",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
