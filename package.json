@@ -21,10 +21,14 @@
     "prettier": "^3.9.10"
   },
   "dependencies": {
+    "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
     "express": "^5.3.0",
-    "mongoose": "^9.11.2"
+    "express-fileupload": "^1.5.2",
+    "mongoose": "^9.11.2",
+    "mongoose-aggregate-paginate-v2": "^1.1.5",
+    "multer": "^2.4.0"
   }
 }
