@@ -39,4 +39,17 @@ app.use("/api/v1/dashboard", dashboardRouter)
 
 // http://localhost:8000/api/v1/users/register
 
+// error handler: turns any error passed to next(err) into the same JSON shape as ApiResponse
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || err.status || 500
+
+    return res.status(statusCode).json({
+        statusCode,
+        data: null,
+        message: err.message || "Internal Server Error",
+        success: false,
+        errors: err.errors || []
+    })
+})
+
 export { app }
