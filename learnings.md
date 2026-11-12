@@ -346,3 +346,48 @@ Things that showed up:
 - **Block scope.** `const t = ...` declared inside an `if` block is not visible after the block. Throw for the invalid case first (a guard clause) so the variables live at function level.
 - **Wrong status codes.** A malformed ID is 400, not 404 or 421. A missing resource is 404. A signed-in user acting on something they do not own is 403. A database that is down is 503.
 - **Checking the model instead of the document.** After `const found = await Playlist.findById(id)`, the owner check must use `found.owner`, not `Playlist.owner`.
+
+## Promises and `await`
+
+**What a promise is**
+
+A database call takes time, since the request goes over the network and MongoDB does the work. JavaScript doesn't stop and wait. Instead, `Playlist.create(...)` returns a **promise** immediately: an object that stands for a result that doesn't exist yet. A promise is in one of three states:
+
+- **pending:** the work isn't finished
+- **fulfilled:** it finished, and the promise holds the result (here, the saved playlist)
+- **rejected:** it failed, and the promise holds the error
+
+**What `await` does**
+
+`await` goes in front of a promise and does two things:
+
+1. It pauses *that function* until the promise settles.
+2. It gives you what's inside: the fulfilled value, or it throws the error if the promise was rejected.
+
+```js
+const new_playlist = await playlist.create({ ... })
+// new_playlist is the saved document here, not a promise
+```
+
+The pause only affects the current handler. While it waits, Node keeps serving other requests. Nothing else blocks.
+
+**Without `await`**
+
+```js
+const new_playlist = playlist.create({ ... })
+// new_playlist is the Promise object itself, still pending
+```
+
+The next line runs immediately. Putting `new_playlist` in `ApiResponse` sends a pending promise, which serializes to an empty object, so the client gets no playlist. And if the save fails, nobody is waiting on the promise, so the rejection is unhandled. That can crash the Node process, and `asyncHandler` never sees it.
+
+**Why `asyncHandler` works with `await`**
+
+When an awaited promise rejects, `await` throws the error inside your handler. The handler's own promise then rejects, and `asyncHandler`'s `.catch` hands the error to `next(err)`, which sends the JSON error response. This is why you don't need `try/catch` in each handler. Your `throw new ApiError(...)` lines take the same path.
+
+**Two rules**
+- `await` only works inside an `async` function (or at the top level of an ES module). That's why your handlers are written `async (req, res) => { ... }`.
+- Two awaits in a row run one after the other. `Promise.all([a, b])` starts both at once and waits for both. You used that in `getChannelStats`.
+
+**A difference between `create` and queries**
+
+`create` starts saving as soon as you call it. A query like `findOneAndDelete(...)` or `find(...)` doesn't run until you `await` it (or call `.then` or `.exec`). So forgetting `await` on `create` still saves the document but loses the result and the error. Forgetting it on a query can mean the query never runs at all.
